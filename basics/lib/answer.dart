@@ -11,7 +11,9 @@ class Answer extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.only(left: 10, right: 10),
-      child: ElevatedButton(
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: Colors.blue)),
         onPressed: selectHandler,
         child: Text(answerText),
       ),
