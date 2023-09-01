@@ -1,4 +1,8 @@
+import 'dart:io';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:personal_expense/models/transcation.dart';
 import 'package:personal_expense/widgets/chart.dart';
@@ -6,6 +10,9 @@ import 'package:personal_expense/widgets/new_transaction.dart';
 import 'package:personal_expense/widgets/transaction_list.dart';
 
 void main() {
+  // WidgetsFlutterBinding.ensureInitialized();
+  // SystemChrome.setPreferredOrientations(
+  //     [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
   runApp(const MyApp());
 }
 
@@ -15,18 +22,20 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Personal Expenses',
       theme: ThemeData(
           primarySwatch: Colors.purple,
           floatingActionButtonTheme: const FloatingActionButtonThemeData(
               backgroundColor: Colors.amber),
-          fontFamily: 'OpenSans',
+          fontFamily: 'Quicksand',
           textTheme: ThemeData.light().textTheme.copyWith(
-                titleLarge: const TextStyle(
-                    fontFamily: 'Quicksand',
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold),
-              ),
+              titleLarge: const TextStyle(
+                  fontFamily: 'Quicksand',
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold),
+              labelLarge: const TextStyle(
+                  fontFamily: 'Quicksand', color: Colors.white)),
           appBarTheme: const AppBarTheme(
             titleTextStyle: TextStyle(
                 fontFamily: 'Quicksand',
@@ -47,18 +56,42 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final List<Transaction> _transactions = [
-    // Transaction(
-    //   id: 't1',
-    //   title: "New Shoes",
-    //   amount: 56.99,
-    //   date: DateTime.now(),
-    // ),
-    // Transaction(
-    //   id: 't2',
-    //   title: "Weekly Groceries",
-    //   amount: 16.99,
-    //   date: DateTime.now(),
-    // ),
+    Transaction(
+      id: 't1',
+      title: "New Shoes",
+      amount: 56.99,
+      date: DateTime.now(),
+    ),
+    Transaction(
+      id: 't2',
+      title: "Weekly Groceries",
+      amount: 16.99,
+      date: DateTime.now().subtract(const Duration(days: 1)),
+    ),
+    Transaction(
+      id: 't3',
+      title: "Football Ticket",
+      amount: 20.99,
+      date: DateTime.now().subtract(const Duration(days: 1)),
+    ),
+    Transaction(
+      id: 't4',
+      title: "Bus Fee",
+      amount: 10.99,
+      date: DateTime.now().subtract(const Duration(days: 2)),
+    ),
+    Transaction(
+      id: 't4',
+      title: "Bus Fee",
+      amount: 10.99,
+      date: DateTime.now().subtract(const Duration(days: 2)),
+    ),
+    Transaction(
+      id: 't4',
+      title: "Bus Fee",
+      amount: 10.99,
+      date: DateTime.now().subtract(const Duration(days: 2)),
+    ),
   ];
 
   List<Transaction> get _recentTransactions {
@@ -73,19 +106,25 @@ class _MyHomePageState extends State<MyHomePage> {
         .toList();
   }
 
-  void _addTransaction(String title, double amount) {
+  void _addTransaction(String title, double amount, DateTime chosenDate) {
     final newTransaction = Transaction(
       id: DateTime.now().toString(),
       title: title,
       amount: amount,
-      date: DateTime.now(),
+      date: chosenDate,
     );
     setState(() {
       _transactions.add(newTransaction);
     });
   }
 
-  void startAddingNewTransaction(BuildContext ctx) {
+  void _deleteTransaction(String id) {
+    setState(() {
+      _transactions.removeWhere((transaction) => transaction.id == id);
+    });
+  }
+
+  void _startAddingNewTransaction(BuildContext ctx) {
     showModalBottomSheet(
       context: ctx,
       builder: (_) {
@@ -94,33 +133,104 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  bool _showChart = false;
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Personal Expenses'),
-        actions: [
-          IconButton(
-              onPressed: () => startAddingNewTransaction(context),
-              icon: const Icon(Icons.add))
-        ],
-      ),
-      body: SingleChildScrollView(
+    final mediaQuery = MediaQuery.of(context);
+    final isLandscape = mediaQuery.orientation == Orientation.landscape;
+    final PreferredSizeWidget appBar = Platform.isIOS
+        ? CupertinoNavigationBar(
+            middle: const Text('Personal Expenses'),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  child: const Icon(CupertinoIcons.add),
+                  onTap: () => _startAddingNewTransaction(context),
+                )
+              ],
+            ),
+          )
+        : AppBar(
+            title: const Text('Personal Expenses'),
+            actions: [
+              IconButton(
+                  onPressed: () => _startAddingNewTransaction(context),
+                  icon: const Icon(Icons.add))
+            ],
+          ) as PreferredSizeWidget;
+    final transactionListWidget = SizedBox(
+      height: (mediaQuery.size.height -
+              appBar.preferredSize.height -
+              mediaQuery.padding.top) *
+          0.75,
+      child: TransactionList(_transactions, _deleteTransaction),
+    );
+
+    final pageBody = SafeArea(
+      child: SingleChildScrollView(
         child: Column(
           children: <Widget>[
-            Chart(_recentTransactions),
-            TransactionList(_transactions),
+            if (isLandscape)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Show Chart',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  Switch.adaptive(
+                      value: _showChart,
+                      onChanged: (val) {
+                        setState(() {
+                          _showChart = val;
+                        });
+                      })
+                ],
+              ),
+            if (!isLandscape)
+              SizedBox(
+                height: (mediaQuery.size.height -
+                        appBar.preferredSize.height -
+                        mediaQuery.padding.top) *
+                    0.25,
+                child: Chart(_recentTransactions),
+              ),
+            if (!isLandscape) transactionListWidget,
+            if (isLandscape)
+              _showChart
+                  ? SizedBox(
+                      height: (mediaQuery.size.height -
+                              appBar.preferredSize.height -
+                              mediaQuery.padding.top) *
+                          0.7,
+                      child: Chart(_recentTransactions),
+                    )
+                  : transactionListWidget,
           ],
         ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => startAddingNewTransaction(context),
-        child: const Icon(
-          Icons.add,
-          color: Colors.black,
-        ),
-      ),
     );
+    return Platform.isIOS
+        ? CupertinoPageScaffold(
+            navigationBar: appBar as ObstructingPreferredSizeWidget,
+            child: pageBody,
+          )
+        : Scaffold(
+            appBar: appBar,
+            body: pageBody,
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerFloat,
+            floatingActionButton: Platform.isIOS
+                ? Container()
+                : FloatingActionButton(
+                    onPressed: () => _startAddingNewTransaction(context),
+                    child: const Icon(
+                      Icons.add,
+                      color: Colors.black,
+                    ),
+                  ),
+          );
   }
 }
