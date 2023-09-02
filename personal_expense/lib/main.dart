@@ -81,13 +81,13 @@ class _MyHomePageState extends State<MyHomePage> {
       date: DateTime.now().subtract(const Duration(days: 2)),
     ),
     Transaction(
-      id: 't4',
+      id: 't5',
       title: "Bus Fee",
       amount: 10.99,
       date: DateTime.now().subtract(const Duration(days: 2)),
     ),
     Transaction(
-      id: 't4',
+      id: 't6',
       title: "Bus Fee",
       amount: 10.99,
       date: DateTime.now().subtract(const Duration(days: 2)),
@@ -133,13 +133,37 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  bool _showChart = false;
+  List<Widget> _buildPortraitContent(
+      MediaQueryData mediaQuery, AppBar appBar, Widget transactionListWidget) {
+    return [
+      SizedBox(
+        height: (mediaQuery.size.height -
+                appBar.preferredSize.height -
+                mediaQuery.padding.top) *
+            0.25,
+        child: Chart(_recentTransactions),
+      ),
+      transactionListWidget,
+    ];
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    final isLandscape = mediaQuery.orientation == Orientation.landscape;
-    final PreferredSizeWidget appBar = Platform.isIOS
+  List<Widget> _buildLandscapeContent(
+      MediaQueryData mediaQuery, AppBar appBar, Widget transactionListWidget) {
+    return [
+      _showChart
+          ? SizedBox(
+              height: (mediaQuery.size.height -
+                      appBar.preferredSize.height -
+                      mediaQuery.padding.top) *
+                  0.7,
+              child: Chart(_recentTransactions),
+            )
+          : transactionListWidget,
+    ];
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return Platform.isIOS
         ? CupertinoNavigationBar(
             middle: const Text('Personal Expenses'),
             trailing: Row(
@@ -160,6 +184,15 @@ class _MyHomePageState extends State<MyHomePage> {
                   icon: const Icon(Icons.add))
             ],
           ) as PreferredSizeWidget;
+  }
+
+  bool _showChart = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final isLandscape = mediaQuery.orientation == Orientation.landscape;
+    final PreferredSizeWidget appBar = _buildAppBar();
     final transactionListWidget = SizedBox(
       height: (mediaQuery.size.height -
               appBar.preferredSize.height -
@@ -190,24 +223,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 ],
               ),
             if (!isLandscape)
-              SizedBox(
-                height: (mediaQuery.size.height -
-                        appBar.preferredSize.height -
-                        mediaQuery.padding.top) *
-                    0.25,
-                child: Chart(_recentTransactions),
-              ),
-            if (!isLandscape) transactionListWidget,
+              ..._buildPortraitContent(
+                  mediaQuery, appBar as AppBar, transactionListWidget),
             if (isLandscape)
-              _showChart
-                  ? SizedBox(
-                      height: (mediaQuery.size.height -
-                              appBar.preferredSize.height -
-                              mediaQuery.padding.top) *
-                          0.7,
-                      child: Chart(_recentTransactions),
-                    )
-                  : transactionListWidget,
+              ..._buildLandscapeContent(
+                  mediaQuery, appBar as AppBar, transactionListWidget),
           ],
         ),
       ),
