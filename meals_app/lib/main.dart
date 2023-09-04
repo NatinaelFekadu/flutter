@@ -1,19 +1,60 @@
 import 'package:flutter/material.dart';
+import 'package:meals_app/dummy_data.dart';
+import 'package:meals_app/models/meal.dart';
 
-import 'package:meals_app/category_meals_screen.dart';
-import 'package:meals_app/catergories_screen.dart';
+import 'package:meals_app/screens/category_meals_screen.dart';
+import 'package:meals_app/screens/catergories_screen.dart';
+import 'package:meals_app/screens/filters_screen.dart';
+import 'package:meals_app/screens/meal_detail_screen.dart';
+import 'package:meals_app/screens/tabs_screen.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  Map<String, bool> _filters = {
+    'gluten': false,
+    'lactose': false,
+    'vegan': false,
+    'vegetarian': false,
+  };
+
+  List<Meal> _availableMeals = dummyMeals;
+
+  void _setFilter(Map<String, bool> filterData) {
+    setState(() {
+      _filters = filterData;
+      _availableMeals = dummyMeals.where((meal) {
+        if (_filters['gluten']! && !meal.isGlutenFree) {
+          return false;
+        }
+        if (_filters['lactose']! && !meal.isLactoseFree) {
+          return false;
+        }
+        if (_filters['vegan']! && !meal.isVegan) {
+          return false;
+        }
+        if (_filters['vegetarian']! && !meal.isVegetarian) {
+          return false;
+        }
+        return true;
+      }).toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Meals App',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.pink,
         canvasColor: const Color.fromRGBO(255, 254, 229, 1),
@@ -34,9 +75,17 @@ class MyApp extends StatelessWidget {
       // home: const CategoriesScreen(),
       initialRoute: '/',
       routes: {
-        '/': (ctx) => const CategoriesScreen(),
-        CategoryMealsScreen.routeName: (ctx) => const CategoryMealsScreen(),
+        '/': (ctx) => const TabsScreen(),
+        CategoryMealsScreen.routeName: (ctx) =>
+            CategoryMealsScreen(_availableMeals),
+        MealDetailScreen.routeName: (ctx) => const MealDetailScreen(),
+        FilterScreen.routeName: (ctx) => FilterScreen(_filters, _setFilter)
       },
+      // onGenerateRoute: (settings) => MaterialPageRoute(
+      //   builder: (ctx) => const CategoriesScreen(),
+      // ),
+      onUnknownRoute: (settings) =>
+          MaterialPageRoute(builder: (ctx) => const CategoriesScreen()),
     );
   }
 }
