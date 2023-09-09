@@ -34,6 +34,23 @@ class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
         setState(() {
           _isLoading = false;
         });
+      }).catchError((error) {
+        setState(() {
+          _isLoading = false;
+          showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                    title: const Text('An error occured'),
+                    content: const Text('Failed to fetch products.'),
+                    actions: [
+                      TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: const Text('Okay'))
+                    ],
+                  ));
+        });
       });
     }
     _isInit = false;

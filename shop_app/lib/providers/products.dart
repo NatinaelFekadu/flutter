@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shop_app/models/http_exception.dart';
 
 import 'package:shop_app/providers/product.dart';
 
@@ -36,6 +37,10 @@ class Products with ChangeNotifier {
     //     imageUrl:
     //         'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSYaLJj4pz-5Z2lFyr4djEaXczcpEaRkOFCSVNseuVAl_q3sTWm0ykssK6HFQ6t0MiaGaw&usqp=CAU'),
   ];
+
+  final String token;
+
+  Products(this.token, this._items);
 
   List<Product> get items {
     return [..._items];
@@ -76,10 +81,14 @@ class Products with ChangeNotifier {
   }
 
   Future<void> fetchAndSetProducts() async {
-    final url = Uri.https(
-        'flutter-5275a-default-rtdb.firebaseio.com', '/products.json');
+    final url = Uri.https('flutter-5275a-default-rtdb.firebaseio.com',
+        '/products.json', {'auth': token});
     try {
       final response = await http.get(url);
+      if (json.decode(response.body) == null) {
+        return;
+      }
+
       final extractedData = json.decode(response.body) as Map<String, dynamic>;
       final List<Product> loadedProducts = [];
       extractedData.forEach((prodId, prodData) {
@@ -113,8 +122,24 @@ class Products with ChangeNotifier {
     notifyListeners();
   }
 
-  void deleteProduct(String id) {
+  Future<void> deleteProduct(String id) async {
+    final url = Uri.https(
+        'flutter-5275a-default-rtdb.firebaseio.com', '/products/$id.json');
+    final existingProductIndex =
+        _items.indexWhere((element) => element.id == id);
+    Product? existingProduct = _items[existingProductIndex];
     _items.removeWhere((element) => element.id == id);
     notifyListeners();
+    try {
+      final response = await http.delete(url);
+      if (response.statusCode >= 400) {
+        throw HttpException('Couldn\'t delete the product');
+      }
+      existingProduct = null;
+    } catch (error) {
+      _items.insert(existingProductIndex, existingProduct!);
+      notifyListeners();
+      rethrow;
+    }
   }
 }
