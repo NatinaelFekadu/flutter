@@ -10,6 +10,8 @@ import 'package:shop_app/screens/edit_product.dart';
 import 'package:shop_app/screens/orders.dart';
 import 'package:shop_app/screens/product_detail.dart';
 import 'package:shop_app/screens/products_overview.dart';
+import 'package:shop_app/screens/splash.dart';
+import 'package:shop_app/helpers/custom_route.dart';
 // import 'package:shop_app/screens/products_overview.dart';
 import 'package:shop_app/screens/user_products.dart';
 
@@ -28,16 +30,26 @@ class MyApp extends StatelessWidget {
           create: (ctx) => Auth(),
         ),
         ChangeNotifierProxyProvider<Auth, Products>(
-          create: ((context) =>
-              Products('', [])),
-          update: (ctx, auth, previousProducts) => Products(auth.token!,
-              previousProducts == null ? [] : previousProducts.items),
+          update: (ctx, auth, previousProducts) {
+            if (auth.token != null) {
+              return Products(
+                auth.token!,
+                previousProducts == null ? [] : previousProducts.items,
+                auth.userId,
+              );
+            } else {
+              return previousProducts ?? Products('', [], '');
+            }
+          },
+          create: ((context) => Products('', [], '')),
         ),
         ChangeNotifierProvider(
           create: (ctx) => Cart(),
         ),
-        ChangeNotifierProvider(
-          create: (ctx) => Orders(),
+        ChangeNotifierProxyProvider<Auth, Orders>(
+          update: (ctx, auth, previousOrders) => Orders(auth.token!,
+              previousOrders == null ? [] : previousOrders.orders, auth.userId),
+          create: (ctx) => Orders('', [], ''),
         ),
       ],
       child: Consumer<Auth>(
@@ -48,13 +60,24 @@ class MyApp extends StatelessWidget {
               // useMaterial3: true,
               primarySwatch: Colors.purple,
               fontFamily: 'Lato',
+              pageTransitionsTheme: PageTransitionsTheme(builders: {
+                TargetPlatform.android: CustomPageTransitionBuilder(),
+                TargetPlatform.iOS: CustomPageTransitionBuilder(),
+              }),
               floatingActionButtonTheme: const FloatingActionButtonThemeData(
                 backgroundColor: Colors.deepOrange,
               )
               // useMaterial3: true,
               ),
-          home:
-              auth.isAuth ? const ProductsOverviewScreen() : const AuthScreen(),
+          home: auth.isAuth
+              ? const ProductsOverviewScreen()
+              : FutureBuilder(
+                  future: auth.tryAutoLogin(),
+                  builder: (context, snapshot) =>
+                      snapshot.connectionState == ConnectionState.waiting
+                          ? const SplashScreen()
+                          : const AuthScreen(),
+                ),
           routes: {
             ProductDetailScreen.routeName: (ctx) => const ProductDetailScreen(),
             CartScreen.routeName: (ctx) => const CartScreen(),

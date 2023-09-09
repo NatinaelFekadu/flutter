@@ -17,27 +17,35 @@ class _OrderItemState extends State<OrderItem> {
   var _expandedMode = false;
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Column(
-        children: [
-          ListTile(
-            title: Text('\$${widget.order.amount.toStringAsFixed(2)}'),
-            subtitle: Text(
-              DateFormat('dd/MM/yyyy hh:mm').format(widget.order.dateTime),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      height: _expandedMode
+          ? min(widget.order.cartProducts.length * 20 + 110, 200)
+          : 95,
+      child: Card(
+        child: Column(
+          children: [
+            ListTile(
+              title: Text('\$${widget.order.amount.toStringAsFixed(2)}'),
+              subtitle: Text(
+                DateFormat('dd/MM/yyyy hh:mm').format(widget.order.dateTime),
+              ),
+              trailing: IconButton(
+                onPressed: () {
+                  setState(() {
+                    _expandedMode = !_expandedMode;
+                  });
+                },
+                icon:
+                    Icon(_expandedMode ? Icons.expand_less : Icons.expand_more),
+              ),
             ),
-            trailing: IconButton(
-              onPressed: () {
-                setState(() {
-                  _expandedMode = !_expandedMode;
-                });
-              },
-              icon: Icon(_expandedMode ? Icons.expand_less : Icons.expand_more),
-            ),
-          ),
-          if (_expandedMode)
-            Container(
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
               padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
-              height: min(widget.order.cartProducts.length * 20 + 10, 100),
+              height: _expandedMode
+                  ? min(widget.order.cartProducts.length * 20 + 10, 100)
+                  : 0,
               child: ListView(
                 children: widget.order.cartProducts
                     .map(
@@ -60,7 +68,8 @@ class _OrderItemState extends State<OrderItem> {
                     .toList(),
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }
