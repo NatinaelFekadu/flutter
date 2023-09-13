@@ -12,13 +12,21 @@ class NewMessage extends StatefulWidget {
 class _NewMessageState extends State<NewMessage> {
   final _controller = TextEditingController();
   var _enteredMessage = '';
-  void _sendMessage() {
+  void _sendMessage() async {
     final user = FirebaseAuth.instance.currentUser;
-    FocusScope.of(context).unfocus();
+    final userData = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user!.uid)
+        .get();
+    if (context.mounted) {
+      FocusScope.of(context).unfocus();
+    }
     FirebaseFirestore.instance.collection('chat').add({
       'text': _enteredMessage,
       'createdAt': Timestamp.now(),
-      'userId': user!.uid,
+      'userId': user.uid,
+      'username': userData['username'],
+      'userImage': userData['image_url'],
     });
     _controller.clear();
   }
