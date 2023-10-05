@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:personal_expense/bloc/transaction_bloc.dart';
+import 'package:personal_expense/bloc/transaction_event.dart';
+import 'package:personal_expense/models/transcation.dart';
 import 'package:personal_expense/widgets/adaptive_text_button.dart';
 
 class NewTransaction extends StatefulWidget {
-  final Function _addTransactionHandler;
+  // final Function _addTransactionHandler;
+  final TransactionBloc transactionBloc;
 
-  const NewTransaction(this._addTransactionHandler, {super.key});
+  const NewTransaction({required this.transactionBloc, super.key});
 
   @override
   State<NewTransaction> createState() => _NewTransactionState();
@@ -24,7 +28,14 @@ class _NewTransactionState extends State<NewTransaction> {
       return;
     }
 
-    widget._addTransactionHandler(enteredTitle, enterdAmount, _selectedDate);
+    // widget._addTransactionHandler(enteredTitle, enterdAmount, _selectedDate);
+    final transaction = Transaction(
+      id: DateTime.now().toString(),
+      title: enteredTitle,
+      amount: enterdAmount,
+      date: _selectedDate,
+    );
+    widget.transactionBloc.add(AddTransactionEvent(transaction: transaction));
     Navigator.of(context).pop();
   }
 

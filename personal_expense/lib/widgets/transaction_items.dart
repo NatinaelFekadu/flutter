@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:personal_expense/bloc/transaction_bloc.dart';
+import 'package:personal_expense/bloc/transaction_event.dart';
 
 import 'package:personal_expense/models/transcation.dart';
 
@@ -7,15 +10,13 @@ class TransactionItem extends StatelessWidget {
   const TransactionItem({
     super.key,
     required Transaction transaction,
-    required Function deleteTransaction,
-  })  : _transaction = transaction,
-        _deleteTransaction = deleteTransaction;
+  }) : _transaction = transaction;
 
   final Transaction _transaction;
-  final Function _deleteTransaction;
 
   @override
   Widget build(BuildContext context) {
+    final transactionBloc = (context).read<TransactionBloc>();
     return Card(
       elevation: 5,
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 5),
@@ -43,12 +44,18 @@ class TransactionItem extends StatelessWidget {
                   'Delete',
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
-                onPressed: () => _deleteTransaction(_transaction.id),
+                onPressed: () {
+                  transactionBloc
+                      .add(DeleteTransactionEvent(id: _transaction.id));
+                },
               )
             : IconButton(
                 icon: const Icon(Icons.delete),
                 color: Theme.of(context).colorScheme.error,
-                onPressed: () => _deleteTransaction(_transaction.id),
+                onPressed: () {
+                  transactionBloc
+                      .add(DeleteTransactionEvent(id: _transaction.id));
+                },
               ),
       ),
     );
